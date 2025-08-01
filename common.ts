@@ -6,10 +6,13 @@ import {
     serializePlutusScript,
     UTxO,
     builtinByteString,
-    stringToHex
+    stringToHex,
+    serializeData,
+    mConStr0
 } from "@meshsdk/core";
 import { applyParamsToScript } from "@meshsdk/core-csl";
 import blueprint from "./plutus.json";
+import { blake2b } from "@meshsdk/core-cst";
 
 const blockchainProvider = new BlockfrostProvider(process.env.BLOCKFROST_PROJECT_ID!);
 
@@ -68,4 +71,9 @@ export async function getUtxoByTxHash(txHash: string): Promise<UTxO> {
     return utxos[0];
 }
 
+export const uniqueTokenName = (txHash: string, outputIndex: number): string => {
+    const outrefCbor = serializeData(mConStr0([txHash, outputIndex]), "Mesh");
+    const hash = blake2b(32).update(Buffer.from(outrefCbor, "hex")).digest("hex");
+    return hash;
+}
 

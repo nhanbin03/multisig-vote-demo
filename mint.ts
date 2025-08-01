@@ -1,13 +1,7 @@
 import { Asset, deserializeAddress, mConStr0, resolveScriptHash, stringToHex, outputReference, utxoToTxIn, PlutusData, serializeData, Output, OutputReference } from "@meshsdk/core";
-import { getScript, getScriptWithParams, getTxBuilder, wallet } from "./common";
+import { getScript, getScriptWithParams, getTxBuilder, uniqueTokenName, wallet } from "./common";
 import { toPlutusData } from "@meshsdk/core-cst";
-import { blake2b, blake2bHex } from "blakejs";
-
-const uniqueTokenName = (txHash: string, outputIndex: number): string => {
-    const outrefCbor = serializeData(mConStr0([txHash, outputIndex]), "Mesh");
-    const hash = blake2bHex(outrefCbor, undefined, 28);
-    return hash;
-}
+import { blake2b } from "@cardano-sdk/crypto";
 
 // 72e6664425e91ffb8db69c547f58e75fe8a0ac5432550729d268ce795522bd0d#1, tx: 77b126b853115dd25948acae5892ca34c0f0f796885488e840e2c921692d3228
 async function main() {
@@ -25,11 +19,10 @@ async function main() {
         const inputTxHash = utxos[0].input.txHash;
         const inputOutputIndex = utxos[0].input.outputIndex;
 
-        // use outputReference for Plustus V2+V3
-        const outRef = outputReference(inputTxHash, inputOutputIndex);
+        const signerHash = deserializeAddress(walletAddress).pubKeyHash;
 
-        // const tokenName = uniqueTokenName(inputTxHash, inputOutputIndex);
-        const tokenName = stringToHex("Multisig");
+        const tokenName = uniqueTokenName(inputTxHash, inputOutputIndex);
+        // const tokenName = stringToHex("Multisig");
         console.log(`Token Name: ${tokenName}`);
 
         // const { scriptAddr, scriptCbor } = getScriptWithParams([outRef]);
@@ -37,9 +30,6 @@ async function main() {
         // const scriptAddr = 'addr_test1wrsaszfdhhtkvvlayvcqr6mdsde60fy5cdsrfj357l7guvq5mmme9';
         console.log(`Script Address: ${scriptAddr}`);
         const policyId = resolveScriptHash(scriptCbor, "V3");
-
-        // hash of the public key of the wallet, to be used in the datum
-        const msg = "Hello, World!";
 
         const assets: Asset[] = [
             {
@@ -62,6 +52,7 @@ async function main() {
             .mintRedeemerValue(mConStr0([0, 0]), "Mesh")
             .txOut(scriptAddr, assets) // send assets to the script address
             .txOutInlineDatumValue(mConStr0([[deserializeAddress(walletAddress).pubKeyHash], 1])) // provide the datum where `"constructor": 0`
+            .requiredSignerHash(signerHash)
             .changeAddress(walletAddress) // send change back to the wallet address
             .txInCollateral(...utxoToTxIn(collateral[0]!))
             .selectUtxosFrom(utxos)

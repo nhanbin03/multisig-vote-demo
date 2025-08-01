@@ -28,6 +28,7 @@ pub fn validate_multisig_datum(
   let datum_signers = datum.signers
   let signers_nr = list.length(datum_signers)
 
+  // list.length(extra_signatories) == 1
   // every required signer must have signed
   let
     all_signers_have_signed,
@@ -90,8 +91,8 @@ pub fn signed_within_threshold(
 /// values.unique_token_name(tx_id, tx_idx, cip68.prefix_333)
 /// ```
 pub fn unique_token_name(out_ref: OutputReference) -> AssetName {
-  // out_ref |> cbor.serialise |> blake2b_256
-  "Multisig"
+  out_ref |> cbor.serialise |> blake2b_256
+  // "Multisig"
 }
 
 // TODO: Find out whether token name is 28 or 32 bytes.

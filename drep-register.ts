@@ -20,30 +20,12 @@ async function main() {
         const collateral = await wallet.getCollateral();
         console.log(`Collateral: ${JSON.stringify(collateral, null, 2)}`);
 
-        const nftTxHash = '72e6664425e91ffb8db69c547f58e75fe8a0ac5432550729d268ce795522bd0d';
-        const nftOutputIndex = 1;
-
-        const tokenName = "MultisigVoteNft";
-
-        // use outputReference for Plustus V2+V3
-        const outRef = outputReference(nftTxHash, nftOutputIndex);
-
-        const { scriptAddr, scriptCbor } = getScript(tokenName, outRef);
+        const { scriptAddr, scriptCbor } = getScript();
         const drepIdCip129 = resolveScriptHashDRepId(resolveScriptHash(scriptCbor, "V3"));
         const drepIdCip105 = DRepID.cip105FromCredential({
             type: Cardano.CredentialType.ScriptHash,
             hash: Hash28ByteBase16(resolveScriptHash(scriptCbor, "V3"))
         }).toString();
-
-
-        // hash of the public key of the wallet, to be used in the datum
-        const signerHash = deserializeAddress(walletAddress).pubKeyHash;
-
-        // get the utxo from the script address of the locked funds
-        const txHashFromDesposit = process.argv[2];
-        const nftHoldingUtxo = utxos.find(utxo =>
-            utxo.output.amount.some(asset => asset.unit === `${resolveScriptHash(scriptCbor, "V3")}${stringToHex(tokenName)}`)
-        )!;
 
         // build transaction with MeshTxBuilder
         const txBuilder = getTxBuilder();

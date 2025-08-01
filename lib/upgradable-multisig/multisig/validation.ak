@@ -45,10 +45,10 @@ pub fn validate_init(
   expect multisig_datum: MultisigDatum = output_datum
   let datum_correct = validate_multisig_datum(multisig_datum, extra_signatories)
 
-  // minted_token_correct
+  // datum_correct
   and {
     address_correct?,
-    // datum_correct?,
+    datum_correct?,
     output_value_has_token?,
     minted_token_correct?,
   }

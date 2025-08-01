@@ -10,7 +10,7 @@ import {
 } from "@meshsdk/core";
 import { getScript, getTxBuilder, getUtxoByTxHash, wallet } from "./common";
 
-async function main() {
+async function main() { // tx minting the token: 7beca007990b25e152528406d173b029cc12026549af9c15010987e846f6c4fd
     try {
         // get utxo, collateral and address from wallet
         const utxos = await wallet.getUtxos();
@@ -38,21 +38,21 @@ async function main() {
         const signerHash = deserializeAddress(walletAddress).pubKeyHash;
 
         // get the utxo from the script address of the locked funds
-        const txHashFromDesposit = process.argv[2];
+        const assetName = process.argv[2]; // 60acdeedb28404a6e2e40dcc4755dc01cb7ea18abb10304ddffa1f92c56fe66f
         const nftHoldingUtxo = utxos.find(utxo =>
-            utxo.output.amount.some(asset => asset.unit === `${resolveScriptHash(scriptCbor, "V3")}${stringToHex(tokenName)}`)
+            utxo.output.amount.some(asset => asset.unit === `${resolveScriptHash(scriptCbor, "V3")}${assetName}`)
         )!;
 
         // build transaction with MeshTxBuilder
         const txBuilder = getTxBuilder();
         await txBuilder
             .votePlutusScriptV3() // we used plutus v3
-            // .txIn(
-            //     nftHoldingUtxo.input.txHash,
-            //     nftHoldingUtxo.input.outputIndex,
-            //     nftHoldingUtxo.output.amount,
-            //     nftHoldingUtxo.output.address
-            // )
+            .txIn(
+                nftHoldingUtxo.input.txHash,
+                nftHoldingUtxo.input.outputIndex,
+                nftHoldingUtxo.output.amount,
+                nftHoldingUtxo.output.address
+            )
             .txIn(...utxoToTxIn(collateral[0]!))
             .vote(
                 {
@@ -75,51 +75,13 @@ async function main() {
             .selectUtxosFrom(utxos)
             .complete();
 
-        // await txBuilder
-        //     .txIn(...utxoToTxIn(collateral[0]!))
-        //     .txInCollateral(...utxoToTxIn(collateral[0]!))
-        //     .votePlutusScriptV3()
-        //     .vote(
-        //         {
-        //             type: "DRep",
-        //             drepId: resolveScriptHashDRepId(
-        //                 resolveScriptHash(
-        //                     applyCborEncoding(
-        //                         "5834010100323232322533300232323232324a260106012004600e002600e004600a00260066ea8004526136565734aae795d0aba201",
-        //                     ),
-        //                     "V3",
-        //                 ),
-        //             ),
-        //         },
-        //         {
-        //             txHash:
-        //                 "2cb57168ee66b68bd04a0d595060b546edf30c04ae1031b883c9ac797967dd85",
-        //             txIndex: 3,
-        //         },
-        //         {
-        //             voteKind: "Yes",
-        //         },
-        //     )
-        //     .voteScript(
-        //         applyCborEncoding(
-        //             "5834010100323232322533300232323232324a260106012004600e002600e004600a00260066ea8004526136565734aae795d0aba201",
-        //         ),
-        //     )
-        //     .voteRedeemerValue("")
-        //     .requiredSignerHash(signerHash)
-        //     .changeAddress(
-        //         walletAddress,
-        //     )
-        //     .selectUtxosFrom(utxos)
-        //     .complete();
-
         const unsignedTx = txBuilder.txHex;
         console.log(`Unsigned transaction: ${unsignedTx}`);
 
         const signedTx = await wallet.signTx(unsignedTx);
         console.log(`Signed transaction: ${signedTx}`);
         const txHash = await wallet.submitTx(signedTx);
-        console.log(`1 tADA unlocked from the contract at Tx ID: ${txHash}`);
+        console.log(`Tx submitted: ${txHash}`); // 9c1b771e5585207ed2f2a691dbe859bd6b796e87090808a3abf5fee1a7358248
     } catch (error) {
         console.error("Error voting:", error);
     }

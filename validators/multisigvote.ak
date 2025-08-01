@@ -40,6 +40,10 @@ validator multisig {
     validate_vote(voter, self)
   }
 
+  publish(_r, _c, _t) {
+    True
+  }
+
   else(_) {
     fail
   }
