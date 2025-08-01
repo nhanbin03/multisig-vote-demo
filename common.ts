@@ -24,14 +24,10 @@ export const wallet = new MeshWallet({
     },
 });
 
-export function getScript(tokenName, outRef) {
+export function getScript() {
     const scriptCbor = applyParamsToScript(
         blueprint.validators[0].compiledCode,
-        [
-            builtinByteString(stringToHex(tokenName)),
-            outRef,
-        ],
-        "JSON",
+        []
     );
     const scriptAddr = serializePlutusScript(
         { code: scriptCbor, version: "V3" },

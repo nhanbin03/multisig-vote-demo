@@ -1,63 +1,43 @@
-use aiken/collection/dict
-use aiken/collection/list
-use aiken/crypto.{Blake2b_224, Hash, VerificationKey}
-use cardano/address.{Script}
-use cardano/assets.{PolicyId, policies}
-use cardano/governance.{DelegateRepresentative, Voter}
-use cardano/transaction.{InlineDatum, OutputReference, Transaction}
-
-pub type PubKeyHash =
-  Hash<Blake2b_224, VerificationKey>
-
-pub type MultisigDatum {
-  signers: List<PubKeyHash>,
-  threshold: Int,
+use cardano/assets.{PolicyId}
+use cardano/governance.{Voter}
+use cardano/transaction.{OutputReference, Transaction}
+use upgradable_multisig/multisig/validation.{
+  validate_end, validate_init, validate_remove, validate_update, validate_vote,
+}
+use upgradable_multisig/types.{
+  EndMultiSig, InitMultiSig, MintMultisigRedeemer, MultisigDatum, Remove,
+  SpendMultisigRedeemer, Update,
 }
 
-// pub type VoteRedeemer {
-// }
+validator multisig {
+  mint(r: MintMultisigRedeemer, own_policy: PolicyId, tx: Transaction) {
+    when r is {
+      InitMultiSig { input_index, output_index } ->
+        validate_init(own_policy, input_index, output_index, tx)
 
-pub type MintRedeemer {
-  Minting
-  Burning
-}
+      EndMultiSig -> validate_end(own_policy, tx)
+    }
+  }
 
-validator multisigvote(token_name: ByteArray, utxo_ref: OutputReference) {
-  mint(redeemer: MintRedeemer, policy_id: PolicyId, self: Transaction) {
-    let Transaction { inputs, mint, .. } = self
-    expect [Pair(asset_name, amount)] =
-      mint
-        |> assets.tokens(policy_id)
-        |> dict.to_pairs()
+  spend(
+    datum_option: Option<MultisigDatum>,
+    redeemer: SpendMultisigRedeemer,
+    output_reference: OutputReference,
+    tx: Transaction,
+  ) {
+    expect Some(d) = datum_option
     when redeemer is {
-      Minting -> {
-        expect Some(_input) =
-          list.find(inputs, fn(input) { input.output_reference == utxo_ref })
-        amount == 1 && asset_name == token_name
-      }
-      Burning -> amount == -1 && asset_name == token_name
+      // Sign { input_index, output_index } ->
+      //   validate_sign(d, output_reference, input_index, output_index, tx)
+      Update { input_index, output_index } ->
+        validate_update(d, output_reference, input_index, output_index, tx)
+      Remove { input_index } ->
+        validate_remove(d, output_reference, input_index, tx)
     }
   }
 
   vote(_redeemer, voter: Voter, self: Transaction) {
-    // let Transaction { inputs, outputs, .. } = self
-
-    // expect DelegateRepresentative(own_credential) = voter
-    // expect Script(own_script_hash) = own_credential
-
-    // // One input should hold the STT, with the expected format.
-    // expect Some(stt_input) =
-    //   list.find(
-    //     inputs,
-    //     fn(input) { list.has(policies(input.output.value), own_script_hash) },
-    //   )
-    // expect InlineDatum(input_datum) = stt_input.output.datum
-    // expect multisig_datum: MultisigDatum = input_datum
-    True
-  }
-
-  publish(_r, _c, _t) {
-    True
+    validate_vote(voter, self)
   }
 
   else(_) {
