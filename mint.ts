@@ -1,5 +1,5 @@
 import { Asset, deserializeAddress, mConStr0, resolveScriptHash, stringToHex, outputReference, utxoToTxIn, PlutusData, serializeData, Output, OutputReference } from "@meshsdk/core";
-import { getScript, getScriptWithParams, getTxBuilder, uniqueTokenName, wallet } from "./common";
+import { getScript, getScriptWithParams, getTxBuilder, uniqueTokenName, wallet, wallet2 } from "./common";
 import { toPlutusData } from "@meshsdk/core-cst";
 import { blake2b } from "@cardano-sdk/crypto";
 
@@ -15,11 +15,14 @@ async function main() {
 
         console.log(`Wallet Address: ${walletAddress}`);
 
+        const user2Address = (await wallet2.getUsedAddresses())[0];
+
         // console.log(`Utxos: ${JSON.stringify(utxos, null, 2)}`);
         const inputTxHash = utxos[0].input.txHash;
         const inputOutputIndex = utxos[0].input.outputIndex;
 
         const signerHash = deserializeAddress(walletAddress).pubKeyHash;
+        const signerHash2 = deserializeAddress(user2Address).pubKeyHash;
 
         const tokenName = uniqueTokenName(inputTxHash, inputOutputIndex);
         // const tokenName = stringToHex("Multisig");
@@ -42,6 +45,10 @@ async function main() {
             }
         ];
 
+        const datumSigners = [
+            signerHash, signerHash2
+        ].sort();
+
         // build transaction with MeshTxBuilder
         const txBuilder = getTxBuilder();
         await txBuilder
@@ -51,8 +58,9 @@ async function main() {
             .mintingScript(scriptCbor)
             .mintRedeemerValue(mConStr0([0, 0]), "Mesh")
             .txOut(scriptAddr, assets) // send assets to the script address
-            .txOutInlineDatumValue(mConStr0([[deserializeAddress(walletAddress).pubKeyHash], 1])) // provide the datum where `"constructor": 0`
+            .txOutInlineDatumValue(mConStr0([datumSigners, 2])) // provide the datum where `"constructor": 0`
             .requiredSignerHash(signerHash)
+            .requiredSignerHash(signerHash2)
             .changeAddress(walletAddress) // send change back to the wallet address
             .txInCollateral(...utxoToTxIn(collateral[0]!))
             .selectUtxosFrom(utxos)
@@ -61,8 +69,9 @@ async function main() {
         // console.log(`Unsigned transaction: ${unsignedTx}`);
 
         const signedTx = await wallet.signTx(unsignedTx);
-        console.log(`Signed transaction: ${signedTx}`);
-        const txHash = await wallet.submitTx(signedTx);
+        const signedTx2 = await wallet2.signTx(signedTx, true);
+        console.log(`Signed transaction: ${signedTx2}`);
+        const txHash = await wallet.submitTx(signedTx2);
         console.log(`Tx submitted: ${txHash}`);
     } catch (error) {
         console.error("Error during transaction:", error);

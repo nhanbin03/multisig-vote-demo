@@ -77,3 +77,12 @@ export const uniqueTokenName = (txHash: string, outputIndex: number): string => 
     return hash;
 }
 
+export const wallet2 = new MeshWallet({
+    networkId: 0,
+    fetcher: blockchainProvider,
+    submitter: blockchainProvider,
+    key: {
+        type: "root",
+        bech32: fs.readFileSync("me2.sk").toString(),
+    },
+});

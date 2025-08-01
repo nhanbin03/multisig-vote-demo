@@ -8,7 +8,7 @@ import {
     resolveScriptHashDRepId,
     applyCborEncoding
 } from "@meshsdk/core";
-import { getScript, getTxBuilder, getUtxoByTxHash, wallet } from "./common";
+import { getScript, getTxBuilder, getUtxoByTxHash, wallet, wallet2 } from "./common";
 
 async function main() { // tx minting the token: 7beca007990b25e152528406d173b029cc12026549af9c15010987e846f6c4fd
     try {
@@ -36,22 +36,19 @@ async function main() { // tx minting the token: 7beca007990b25e152528406d173b02
 
         // hash of the public key of the wallet, to be used in the datum
         const signerHash = deserializeAddress(walletAddress).pubKeyHash;
+        const signerHash2 = deserializeAddress((await wallet2.getUsedAddresses())[0]).pubKeyHash;
 
         // get the utxo from the script address of the locked funds
-        const assetName = process.argv[2]; // 60acdeedb28404a6e2e40dcc4755dc01cb7ea18abb10304ddffa1f92c56fe66f
-        const nftHoldingUtxo = utxos.find(utxo =>
-            utxo.output.amount.some(asset => asset.unit === `${resolveScriptHash(scriptCbor, "V3")}${assetName}`)
-        )!;
+        const txHashHoldingNft = process.argv[2]; // 60acdeedb28404a6e2e40dcc4755dc01cb7ea18abb10304ddffa1f92c56fe66f
+        const nftHoldingUtxo = await getUtxoByTxHash(txHashHoldingNft);
 
         // build transaction with MeshTxBuilder
         const txBuilder = getTxBuilder();
         await txBuilder
             .votePlutusScriptV3() // we used plutus v3
-            .txIn(
+            .readOnlyTxInReference(
                 nftHoldingUtxo.input.txHash,
                 nftHoldingUtxo.input.outputIndex,
-                nftHoldingUtxo.output.amount,
-                nftHoldingUtxo.output.address
             )
             .txIn(...utxoToTxIn(collateral[0]!))
             .vote(
@@ -70,6 +67,7 @@ async function main() { // tx minting the token: 7beca007990b25e152528406d173b02
             .voteScript(scriptCbor)
             .voteRedeemerValue(mConStr0([]), "Mesh")
             .requiredSignerHash(signerHash)
+            .requiredSignerHash(signerHash2)
             .changeAddress(walletAddress)
             .txInCollateral(...utxoToTxIn(collateral[0]!))
             .selectUtxosFrom(utxos)
@@ -79,8 +77,9 @@ async function main() { // tx minting the token: 7beca007990b25e152528406d173b02
         console.log(`Unsigned transaction: ${unsignedTx}`);
 
         const signedTx = await wallet.signTx(unsignedTx);
+        const signedTx2 = await wallet2.signTx(signedTx, true);
         console.log(`Signed transaction: ${signedTx}`);
-        const txHash = await wallet.submitTx(signedTx);
+        const txHash = await wallet.submitTx(signedTx2);
         console.log(`Tx submitted: ${txHash}`); // 9c1b771e5585207ed2f2a691dbe859bd6b796e87090808a3abf5fee1a7358248
     } catch (error) {
         console.error("Error voting:", error);
