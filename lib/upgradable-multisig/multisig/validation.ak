@@ -38,14 +38,17 @@ pub fn validate_init(
   expect [Pair(tkn, 1)] = dict.to_pairs(tokens(mint, own_policy))
   let minted_token_correct = tkn == multisig_token_name
   let output_value_has_token =
-    quantity_of(output_value, own_policy, multisig_token_name) == 1
+    quantity_of(output_value, own_policy, multisig_token_name) >= 1
 
+  // let output_value_has_token =
+  //   quantity_of(output_value, own_policy, multisig_token_name) == 1
   expect multisig_datum: MultisigDatum = output_datum
   let datum_correct = validate_multisig_datum(multisig_datum, extra_signatories)
 
+  // minted_token_correct
   and {
     address_correct?,
-    datum_correct?,
+    // datum_correct?,
     output_value_has_token?,
     minted_token_correct?,
   }

@@ -29,7 +29,7 @@ async function main() {
         const outRef = outputReference(nftTxHash, nftOutputIndex);
 
         // const { scriptAddr, scriptCbor } = getScriptWithParams([outRef]);
-        const { scriptAddr, scriptCbor } = getScript(tokenName, outRef);
+        const { scriptAddr, scriptCbor } = getScript();
         // const scriptAddr = 'addr_test1wrsaszfdhhtkvvlayvcqr6mdsde60fy5cdsrfj357l7guvq5mmme9';
         const drepId = resolveScriptHashDRepId(resolveScriptHash(scriptCbor, "V3"));
 

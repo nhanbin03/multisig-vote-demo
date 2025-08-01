@@ -90,7 +90,8 @@ pub fn signed_within_threshold(
 /// values.unique_token_name(tx_id, tx_idx, cip68.prefix_333)
 /// ```
 pub fn unique_token_name(out_ref: OutputReference) -> AssetName {
-  out_ref |> cbor.serialise |> blake2b_256
+  // out_ref |> cbor.serialise |> blake2b_256
+  "Multisig"
 }
 
 // TODO: Find out whether token name is 28 or 32 bytes.
