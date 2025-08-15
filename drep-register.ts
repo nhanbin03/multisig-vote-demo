@@ -56,4 +56,4 @@ async function main() {
 main();
 
 
-// run with `npx tsx vote.ts <txHashFromDeposit>`
+// run with `npx tsx drep-register.ts`

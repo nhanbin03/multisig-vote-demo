@@ -57,7 +57,7 @@ async function main() { // tx minting the token: 7beca007990b25e152528406d173b02
                     drepId: drepId,
                 },
                 {
-                    txHash: '25a16ada4a57fd29a1ac5f62f585d923ffe3e23321512380dfd276f6c73b1451',
+                    txHash: '2eaaa6a1c3c00b12330f459e23af295b198cc0c4030dc7a2d3c3ca1ec0e43dbd',
                     txIndex: 0,
                 },
                 {
@@ -78,7 +78,7 @@ async function main() { // tx minting the token: 7beca007990b25e152528406d173b02
 
         const signedTx = await wallet.signTx(unsignedTx);
         const signedTx2 = await wallet2.signTx(signedTx, true);
-        console.log(`Signed transaction: ${signedTx}`);
+        // console.log(`Signed transaction: ${signedTx}`);
         const txHash = await wallet.submitTx(signedTx2);
         console.log(`Tx submitted: ${txHash}`); // 9c1b771e5585207ed2f2a691dbe859bd6b796e87090808a3abf5fee1a7358248
     } catch (error) {

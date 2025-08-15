@@ -45,20 +45,26 @@ async function main() {
             }
         ];
 
+        // ------ Edit here ------- //
         const datumSigners = [
             signerHash, signerHash2
         ].sort();
+
+        const threshold = 2;
+        // ------- End ------- //
 
         // build transaction with MeshTxBuilder
         const txBuilder = getTxBuilder();
         await txBuilder
             .txIn(inputTxHash, inputOutputIndex)
+
             .mintPlutusScriptV3()
             .mint("1", policyId, tokenName) // mint 1 token with the script hash
             .mintingScript(scriptCbor)
             .mintRedeemerValue(mConStr0([0, 0]), "Mesh")
+            
             .txOut(scriptAddr, assets) // send assets to the script address
-            .txOutInlineDatumValue(mConStr0([datumSigners, 2])) // provide the datum where `"constructor": 0`
+            .txOutInlineDatumValue(mConStr0([datumSigners, threshold])) // provide the datum where `"constructor": 0`
             .requiredSignerHash(signerHash)
             .requiredSignerHash(signerHash2)
             .changeAddress(walletAddress) // send change back to the wallet address
